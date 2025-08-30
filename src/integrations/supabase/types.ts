@@ -14,7 +14,83 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      acupuncture_sessions: {
+        Row: {
+          head_count: number
+          id: string
+          left_arm_count: number
+          left_leg_count: number
+          notes: string | null
+          patient_id: string
+          right_arm_count: number
+          right_leg_count: number
+          session_date: string
+          total_needles: number
+          trunk_count: number
+        }
+        Insert: {
+          head_count?: number
+          id?: string
+          left_arm_count?: number
+          left_leg_count?: number
+          notes?: string | null
+          patient_id: string
+          right_arm_count?: number
+          right_leg_count?: number
+          session_date?: string
+          total_needles?: number
+          trunk_count?: number
+        }
+        Update: {
+          head_count?: number
+          id?: string
+          left_arm_count?: number
+          left_leg_count?: number
+          notes?: string | null
+          patient_id?: string
+          right_arm_count?: number
+          right_leg_count?: number
+          session_date?: string
+          total_needles?: number
+          trunk_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acupuncture_sessions_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      patients: {
+        Row: {
+          created_at: string
+          gender: string
+          id: string
+          medical_record_number: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          gender: string
+          id?: string
+          medical_record_number: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          gender?: string
+          id?: string
+          medical_record_number?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
