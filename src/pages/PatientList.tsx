@@ -31,21 +31,34 @@ const PatientList = () => {
 
   const fetchPatients = async () => {
     try {
-      const { data, error } = await supabase
+      // First get all patients
+      const { data: patientsData, error: patientsError } = await supabase
         .from('patients')
-        .select(`
-          *,
-          acupuncture_sessions(count, session_date)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (patientsError) throw patientsError;
 
-      const patientsWithSessions = data?.map(patient => ({
-        ...patient,
-        session_count: patient.acupuncture_sessions?.length || 0,
-        last_session: patient.acupuncture_sessions?.[0]?.session_date
-      })) || [];
+      // Then get session counts and last session for each patient
+      const patientsWithSessions = await Promise.all(
+        (patientsData || []).map(async (patient) => {
+          const { data: sessions, error: sessionError } = await supabase
+            .from('acupuncture_sessions')
+            .select('session_date')
+            .eq('patient_id', patient.id)
+            .order('session_date', { ascending: false });
+
+          if (sessionError) {
+            console.error('Error fetching sessions for patient:', patient.id, sessionError);
+          }
+
+          return {
+            ...patient,
+            session_count: sessions?.length || 0,
+            last_session: sessions?.[0]?.session_date
+          };
+        })
+      );
 
       setPatients(patientsWithSessions);
     } catch (error) {
