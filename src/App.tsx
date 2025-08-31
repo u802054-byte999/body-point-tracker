@@ -17,8 +17,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/patients" element={<PatientList />} />
+          <Route path="/" element={<PatientList />} />
           <Route path="/patient/new" element={<AddPatient />} />
           <Route path="/patient/:patientId/treatment" element={<Index />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
