@@ -62,9 +62,22 @@ interface Patient {
   gender: string;
 }
 
+interface Session {
+  id: string;
+  session_date: string;
+  head_count: number;
+  trunk_count: number;
+  left_arm_count: number;
+  right_arm_count: number;
+  left_leg_count: number;
+  right_leg_count: number;
+  total_needles: number;
+}
+
 const AcupunctureTracker = () => {
   const [bodyParts, setBodyParts] = useState<BodyPart[]>(initialBodyParts);
   const [patient, setPatient] = useState<Patient | null>(null);
+  const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const { patientId } = useParams();
@@ -74,6 +87,7 @@ const AcupunctureTracker = () => {
   useEffect(() => {
     if (patientId) {
       fetchPatient();
+      fetchSessions();
     } else {
       setLoading(false);
     }
@@ -98,10 +112,38 @@ const AcupunctureTracker = () => {
         description: "無法載入患者資料",
         variant: "destructive",
       });
-      navigate('/patients');
+      navigate('/');
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchSessions = async () => {
+    if (!patientId) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('acupuncture_sessions')
+        .select('*')
+        .eq('patient_id', patientId)
+        .order('session_date', { ascending: false });
+
+      if (error) throw error;
+      setSessions(data || []);
+    } catch (error) {
+      console.error('Error fetching sessions:', error);
+    }
+  };
+
+  const formatDateTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleString('zh-TW', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   const handleIncrement = (id: string) => {
@@ -175,8 +217,9 @@ const AcupunctureTracker = () => {
         description: "針灸記錄已儲存",
       });
 
-      // Reset counts after saving
+      // Reset counts after saving and refresh sessions
       setBodyParts(initialBodyParts);
+      fetchSessions();
     } catch (error) {
       console.error('Error saving session:', error);
       toast({
@@ -209,7 +252,7 @@ const AcupunctureTracker = () => {
             <h1 className="text-4xl font-bold text-medical-900 mb-2">針灸計數器</h1>
             <p className="text-medical-600">點擊身體部位或使用控制面板來計算針數</p>
             <div className="mt-4">
-              <Button onClick={() => navigate('/patients')} className="bg-medical-600 hover:bg-medical-700">
+              <Button onClick={() => navigate('/')} className="bg-medical-600 hover:bg-medical-700">
                 前往患者管理
               </Button>
             </div>
@@ -348,7 +391,7 @@ const AcupunctureTracker = () => {
             <div className="flex items-center gap-4">
               <Button
                 variant="outline"
-                onClick={() => navigate('/patients')}
+                onClick={() => navigate('/')}
                 className="flex items-center gap-2"
               >
                 <ArrowLeft className="w-4 h-4" />
@@ -505,6 +548,42 @@ const AcupunctureTracker = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Sessions History */}
+        {sessions.length > 0 && (
+          <Card className="bg-white shadow-lg border-medical-200 mt-8">
+            <CardHeader>
+              <CardTitle className="text-medical-900">治療記錄</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {sessions.map((session) => (
+                  <div
+                    key={session.id}
+                    className="p-4 bg-medical-50 rounded-lg border border-medical-200"
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="font-medium text-medical-900">
+                        治療時間: {formatDateTime(session.session_date)}
+                      </span>
+                      <Badge variant="default" className="text-medical-700">
+                        總針數: {session.total_needles}
+                      </Badge>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm text-medical-600">
+                      <div>頭部: {session.head_count}</div>
+                      <div>軀幹: {session.trunk_count}</div>
+                      <div>左上肢: {session.left_arm_count}</div>
+                      <div>右上肢: {session.right_arm_count}</div>
+                      <div>左下肢: {session.left_leg_count}</div>
+                      <div>右下肢: {session.right_leg_count}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
