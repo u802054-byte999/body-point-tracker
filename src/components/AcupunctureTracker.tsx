@@ -298,7 +298,7 @@ const AcupunctureTracker = () => {
                     </div>
                   ))}
                 </div>
-                <div className="flex justify-center mt-6">
+                <div className="flex justify-center gap-4 mt-6">
                   <Button
                     onClick={handleResetAll}
                     variant="outline"
@@ -306,6 +306,20 @@ const AcupunctureTracker = () => {
                   >
                     <RotateCcw className="w-4 h-4 mr-2" />
                     重置全部
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      toast({
+                        title: "提示",
+                        description: "請選擇患者後再儲存針數記錄",
+                        variant: "destructive",
+                      });
+                    }}
+                    disabled={getTotalNeedles() === 0}
+                    className="bg-medical-600 hover:bg-medical-700"
+                  >
+                    <Save className="w-4 h-4 mr-2" />
+                    儲存針數記錄
                   </Button>
                 </div>
               </CardContent>
