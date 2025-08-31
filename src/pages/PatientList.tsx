@@ -91,7 +91,7 @@ const PatientList = () => {
             </div>
             <Button
               onClick={() => navigate('/patient/new')}
-              className="bg-medical-600 hover:bg-medical-700"
+              className="bg-white-button text-white-button-foreground border border-gray-300 hover:bg-gray-50"
             >
               <Plus className="w-4 h-4 mr-2" />
               新增患者
@@ -171,7 +171,7 @@ const PatientList = () => {
             {!searchTerm && (
               <Button
                 onClick={() => navigate('/patient/new')}
-                className="bg-medical-600 hover:bg-medical-700"
+                className="bg-white-button text-white-button-foreground border border-gray-300 hover:bg-gray-50"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 新增患者

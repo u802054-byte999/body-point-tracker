@@ -166,7 +166,7 @@ const AddPatient = () => {
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="flex-1 bg-medical-600 hover:bg-medical-700"
+                  className="flex-1 bg-white-button text-white-button-foreground border border-gray-300 hover:bg-gray-50"
                 >
                   {loading ? (
                     <div className="flex items-center gap-2">

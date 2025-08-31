@@ -42,6 +42,9 @@ All colors MUST be HSL.
     --medical-warning: 38 92% 50%;
     --medical-error: 0 84% 60%;
     
+    --white-button: 0 0% 100%;
+    --white-button-foreground: 213 27% 14%;
+    
     --body-part: 210 16% 93%;
     --body-part-hover: 210 83% 53%;
     --body-part-active: 198 70% 50%;

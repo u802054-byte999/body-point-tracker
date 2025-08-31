@@ -316,7 +316,7 @@ const AcupunctureTracker = () => {
                       });
                     }}
                     disabled={getTotalNeedles() === 0}
-                    className="bg-medical-600 hover:bg-medical-700"
+                    className="bg-white-button text-white-button-foreground border border-gray-300 hover:bg-gray-50"
                   >
                     <Save className="w-4 h-4 mr-2" />
                     儲存針數記錄
@@ -487,7 +487,7 @@ const AcupunctureTracker = () => {
                 <Button
                   onClick={handleSaveSession}
                   disabled={saving || getTotalNeedles() === 0}
-                  className="bg-medical-600 hover:bg-medical-700"
+                  className="bg-white-button text-white-button-foreground border border-gray-300 hover:bg-gray-50"
                 >
                   {saving ? (
                     <div className="flex items-center gap-2">

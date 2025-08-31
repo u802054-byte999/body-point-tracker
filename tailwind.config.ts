@@ -59,6 +59,10 @@ export default {
 					warning: 'hsl(var(--medical-warning))',
 					error: 'hsl(var(--medical-error))'
 				},
+				'white-button': {
+					DEFAULT: 'hsl(var(--white-button))',
+					foreground: 'hsl(var(--white-button-foreground))'
+				},
 				'body-part': {
 					DEFAULT: 'hsl(var(--body-part))',
 					hover: 'hsl(var(--body-part-hover))',
