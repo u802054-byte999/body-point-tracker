@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, Save, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { QRScanner } from '@/components/QRScanner';
 
 const AddPatient = () => {
   const [formData, setFormData] = useState({
@@ -113,13 +114,19 @@ const AddPatient = () => {
                 <Label htmlFor="medical_record_number">
                   病歷號 <span className="text-red-500">*</span>
                 </Label>
-                <Input
-                  id="medical_record_number"
-                  value={formData.medical_record_number}
-                  onChange={(e) => handleInputChange('medical_record_number', e.target.value)}
-                  placeholder="請輸入病歷號"
-                  required
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="medical_record_number"
+                    value={formData.medical_record_number}
+                    onChange={(e) => handleInputChange('medical_record_number', e.target.value)}
+                    placeholder="請輸入病歷號"
+                    required
+                    className="flex-1"
+                  />
+                  <QRScanner 
+                    onScanResult={(result) => handleInputChange('medical_record_number', result)}
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">

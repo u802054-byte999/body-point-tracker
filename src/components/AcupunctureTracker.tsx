@@ -72,6 +72,7 @@ interface Session {
   left_leg_count: number;
   right_leg_count: number;
   total_needles: number;
+  needle_removal_time?: string;
 }
 
 const AcupunctureTracker = () => {
@@ -80,6 +81,7 @@ const AcupunctureTracker = () => {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [completingNeedles, setCompletingNeedles] = useState<string | null>(null);
   const { patientId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -188,6 +190,35 @@ const AcupunctureTracker = () => {
 
   const getTotalNeedles = () => {
     return bodyParts.reduce((total, part) => total + part.count, 0);
+  };
+
+  const handleCompleteNeedleRemoval = async (sessionId: string) => {
+    setCompletingNeedles(sessionId);
+    try {
+      const { error } = await supabase
+        .from('acupuncture_sessions')
+        .update({ needle_removal_time: new Date().toISOString() })
+        .eq('id', sessionId);
+
+      if (error) throw error;
+
+      toast({
+        title: "成功",
+        description: "拔針時間已記錄",
+      });
+
+      // Refresh sessions to show updated data
+      fetchSessions();
+    } catch (error) {
+      console.error('Error updating needle removal time:', error);
+      toast({
+        title: "錯誤",
+        description: "無法記錄拔針時間",
+        variant: "destructive",
+      });
+    } finally {
+      setCompletingNeedles(null);
+    }
   };
 
   const handleSaveSession = async () => {
@@ -456,10 +487,10 @@ const AcupunctureTracker = () => {
           </Card>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-8">
-          <Card className="bg-white shadow-lg border-medical-200">
+        <div className="flex justify-center mb-8">
+          <Card className="bg-white shadow-lg border-medical-200 w-full max-w-4xl">
             <CardHeader>
-              <CardTitle className="text-medical-900">身體圖示</CardTitle>
+              <CardTitle className="text-medical-900 text-center">身體圖示</CardTitle>
             </CardHeader>
             <CardContent>
               <BodyDiagram
@@ -468,56 +499,6 @@ const AcupunctureTracker = () => {
                 onDecrement={handleDecrement}
                 onReset={handleReset}
               />
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white shadow-lg border-medical-200">
-            <CardHeader>
-              <CardTitle className="text-medical-900">控制面板</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {bodyParts.map((part) => (
-                  <div
-                    key={part.id}
-                    className="flex items-center justify-between p-4 bg-medical-50 rounded-lg border border-medical-200"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="font-medium text-medical-900">{part.name}</span>
-                      <Badge variant="outline" className="text-medical-700">
-                        {part.count}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleDecrement(part.id)}
-                        disabled={part.count === 0}
-                        className="text-medical-600 border-medical-300 hover:bg-medical-100"
-                      >
-                        <Minus className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => handleIncrement(part.id)}
-                        className="bg-medical-600 hover:bg-medical-700"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleReset(part.id)}
-                        disabled={part.count === 0}
-                        className="text-medical-600 border-medical-300 hover:bg-medical-100"
-                      >
-                        <RotateCcw className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
               <div className="flex justify-center gap-4 mt-6">
                 <Button
                   onClick={handleResetAll}
@@ -570,13 +551,41 @@ const AcupunctureTracker = () => {
                         總針數: {session.total_needles}
                       </Badge>
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm text-medical-600">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm text-medical-600 mb-3">
                       <div>頭部: {session.head_count}</div>
                       <div>軀幹: {session.trunk_count}</div>
                       <div>左上肢: {session.left_arm_count}</div>
                       <div>右上肢: {session.right_arm_count}</div>
                       <div>左下肢: {session.left_leg_count}</div>
                       <div>右下肢: {session.right_leg_count}</div>
+                    </div>
+                    {session.needle_removal_time && (
+                      <div className="text-sm text-medical-600 mb-3">
+                        拔針時間: {formatDateTime(session.needle_removal_time)}
+                      </div>
+                    )}
+                    <div className="flex justify-end">
+                      {!session.needle_removal_time ? (
+                        <Button
+                          size="sm"
+                          onClick={() => handleCompleteNeedleRemoval(session.id)}
+                          disabled={completingNeedles === session.id}
+                          className="bg-white-button text-white-button-foreground border border-gray-300 hover:bg-gray-50"
+                        >
+                          {completingNeedles === session.id ? (
+                            <div className="flex items-center gap-2">
+                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-400"></div>
+                              處理中...
+                            </div>
+                          ) : (
+                            '完成拔針'
+                          )}
+                        </Button>
+                      ) : (
+                        <Badge variant="secondary" className="text-green-700">
+                          已完成拔針
+                        </Badge>
+                      )}
                     </div>
                   </div>
                 ))}

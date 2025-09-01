@@ -20,6 +20,7 @@ export type Database = {
           id: string
           left_arm_count: number
           left_leg_count: number
+          needle_removal_time: string | null
           notes: string | null
           patient_id: string
           right_arm_count: number
@@ -33,6 +34,7 @@ export type Database = {
           id?: string
           left_arm_count?: number
           left_leg_count?: number
+          needle_removal_time?: string | null
           notes?: string | null
           patient_id: string
           right_arm_count?: number
@@ -46,6 +48,7 @@ export type Database = {
           id?: string
           left_arm_count?: number
           left_leg_count?: number
+          needle_removal_time?: string | null
           notes?: string | null
           patient_id?: string
           right_arm_count?: number
