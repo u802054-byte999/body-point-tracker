@@ -4,9 +4,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, User, Calendar, Search } from 'lucide-react';
+import { Plus, User, Calendar, Search, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { QRScanner } from '@/components/QRScanner';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 interface Patient {
   id: string;
@@ -73,6 +75,41 @@ const PatientList = () => {
     }
   };
 
+  const deletePatient = async (patientId: string, patientName: string) => {
+    try {
+      // First delete all sessions for this patient
+      const { error: sessionError } = await supabase
+        .from('acupuncture_sessions')
+        .delete()
+        .eq('patient_id', patientId);
+
+      if (sessionError) throw sessionError;
+
+      // Then delete the patient
+      const { error: patientError } = await supabase
+        .from('patients')
+        .delete()
+        .eq('id', patientId);
+
+      if (patientError) throw patientError;
+
+      toast({
+        title: "成功",
+        description: `已刪除患者 ${patientName}`,
+      });
+
+      // Refresh the patient list
+      fetchPatients();
+    } catch (error) {
+      console.error('Error deleting patient:', error);
+      toast({
+        title: "錯誤",
+        description: "無法刪除患者",
+        variant: "destructive",
+      });
+    }
+  };
+
   const filteredPatients = patients.filter(patient =>
     patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     patient.medical_record_number.toLowerCase().includes(searchTerm.toLowerCase())
@@ -115,13 +152,19 @@ const PatientList = () => {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-medical-400 w-4 h-4" />
-            <Input
-              placeholder="搜尋患者姓名或病歷號..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-medical-400 w-4 h-4" />
+              <Input
+                placeholder="搜尋患者姓名或病歷號..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <QRScanner 
+              onScanResult={(result) => setSearchTerm(result)}
+              scanType="barcode"
             />
           </div>
         </div>
@@ -130,44 +173,79 @@ const PatientList = () => {
           {filteredPatients.map((patient) => (
             <Card 
               key={patient.id} 
-              className="hover:shadow-lg transition-shadow cursor-pointer border-medical-200"
-              onClick={() => navigate(`/patient/${patient.id}/treatment`)}
+              className="hover:shadow-lg transition-shadow border-medical-200 relative"
             >
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <User className="w-5 h-5 text-medical-600" />
-                    {patient.name}
-                  </CardTitle>
-                  <Badge variant={patient.gender === '男' ? 'default' : 'secondary'}>
-                    {patient.gender}
-                  </Badge>
-                </div>
-                <p className="text-sm text-medical-600">
-                  病歷號: {patient.medical_record_number}
-                </p>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-medical-600">治療次數:</span>
-                    <Badge variant="outline">{patient.session_count} 次</Badge>
+              <div 
+                className="cursor-pointer"
+                onClick={() => navigate(`/patient/${patient.id}/treatment`)}
+              >
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <User className="w-5 h-5 text-medical-600" />
+                      {patient.name}
+                    </CardTitle>
+                    <Badge variant={patient.gender === '男' ? 'default' : 'secondary'}>
+                      {patient.gender}
+                    </Badge>
                   </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-medical-600">加入日期:</span>
-                    <span className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      {formatDate(patient.created_at)}
-                    </span>
-                  </div>
-                  {patient.last_session && (
+                  <p className="text-sm text-medical-600">
+                    病歷號: {patient.medical_record_number}
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-medical-600">最後治療:</span>
-                      <span>{formatDate(patient.last_session)}</span>
+                      <span className="text-medical-600">治療次數:</span>
+                      <Badge variant="outline">{patient.session_count} 次</Badge>
                     </div>
-                  )}
-                </div>
-              </CardContent>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-medical-600">加入日期:</span>
+                      <span className="flex items-center gap-1">
+                        <Calendar className="w-3 h-3" />
+                        {formatDate(patient.created_at)}
+                      </span>
+                    </div>
+                    {patient.last_session && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-medical-600">最後治療:</span>
+                        <span>{formatDate(patient.last_session)}</span>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </div>
+              <div className="absolute top-2 right-2">
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>確認刪除患者</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        您確定要刪除患者「{patient.name}」嗎？此操作將同時刪除所有相關的治療記錄，且無法復原。
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>取消</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => deletePatient(patient.id, patient.name)}
+                        className="bg-red-500 hover:bg-red-600"
+                      >
+                        確認刪除
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
             </Card>
           ))}
         </div>

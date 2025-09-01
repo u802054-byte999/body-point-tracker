@@ -8,9 +8,10 @@ import { useToast } from '@/hooks/use-toast';
 interface QRScannerProps {
   onScanResult: (result: string) => void;
   trigger?: React.ReactNode;
+  scanType?: 'qr' | 'barcode';
 }
 
-const QRScanner = ({ onScanResult, trigger }: QRScannerProps) => {
+const QRScanner = ({ onScanResult, trigger, scanType = 'qr' }: QRScannerProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -39,13 +40,18 @@ const QRScanner = ({ onScanResult, trigger }: QRScannerProps) => {
           setIsOpen(false);
           toast({
             title: "掃描成功",
-            description: "已成功讀取 QR Code",
+            description: scanType === 'barcode' ? "已成功讀取條碼" : "已成功讀取 QR Code",
           });
         },
         {
           returnDetailedScanResult: true,
           highlightScanRegion: true,
           highlightCodeOutline: true,
+          preferredCamera: 'back',
+          ...(scanType === 'barcode' && {
+            allowMultiple: false,
+            decodeBarcode: true,
+          })
         }
       );
 
@@ -86,14 +92,14 @@ const QRScanner = ({ onScanResult, trigger }: QRScannerProps) => {
         {trigger || (
           <Button variant="outline" size="sm">
             <Camera className="w-4 h-4 mr-2" />
-            掃描 QR Code
+            {scanType === 'barcode' ? '掃描條碼' : '掃描 QR Code'}
           </Button>
         )}
       </DialogTrigger>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
-            掃描 QR Code
+            {scanType === 'barcode' ? '掃描條碼' : '掃描 QR Code'}
             <Button
               variant="ghost"
               size="sm"
@@ -121,7 +127,7 @@ const QRScanner = ({ onScanResult, trigger }: QRScannerProps) => {
             )}
           </div>
           <div className="text-center text-sm text-muted-foreground">
-            將 QR Code 對準相機畫面進行掃描
+            {scanType === 'barcode' ? '將條碼對準相機畫面進行掃描' : '將 QR Code 對準相機畫面進行掃描'}
           </div>
         </div>
       </DialogContent>

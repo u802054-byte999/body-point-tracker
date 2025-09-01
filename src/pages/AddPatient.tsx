@@ -125,6 +125,7 @@ const AddPatient = () => {
                   />
                   <QRScanner 
                     onScanResult={(result) => handleInputChange('medical_record_number', result)}
+                    scanType="barcode"
                   />
                 </div>
               </div>
