@@ -40,18 +40,14 @@ const QRScanner = ({ onScanResult, trigger, scanType = 'qr' }: QRScannerProps) =
           setIsOpen(false);
           toast({
             title: "掃描成功",
-            description: scanType === 'barcode' ? "已成功讀取條碼" : "已成功讀取 QR Code",
+            description: "已成功讀取 QR Code",
           });
         },
         {
           returnDetailedScanResult: true,
           highlightScanRegion: true,
           highlightCodeOutline: true,
-          preferredCamera: 'back',
-          ...(scanType === 'barcode' && {
-            allowMultiple: false,
-            decodeBarcode: true,
-          })
+          preferredCamera: 'environment'
         }
       );
 
@@ -92,14 +88,14 @@ const QRScanner = ({ onScanResult, trigger, scanType = 'qr' }: QRScannerProps) =
         {trigger || (
           <Button variant="outline" size="sm">
             <Camera className="w-4 h-4 mr-2" />
-            {scanType === 'barcode' ? '掃描條碼' : '掃描 QR Code'}
+            掃描 QR Code
           </Button>
         )}
       </DialogTrigger>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
-            {scanType === 'barcode' ? '掃描條碼' : '掃描 QR Code'}
+            掃描 QR Code
             <Button
               variant="ghost"
               size="sm"
@@ -127,7 +123,7 @@ const QRScanner = ({ onScanResult, trigger, scanType = 'qr' }: QRScannerProps) =
             )}
           </div>
           <div className="text-center text-sm text-muted-foreground">
-            {scanType === 'barcode' ? '將條碼對準相機畫面進行掃描' : '將 QR Code 對準相機畫面進行掃描'}
+            將 QR Code 對準相機畫面進行掃描
           </div>
         </div>
       </DialogContent>

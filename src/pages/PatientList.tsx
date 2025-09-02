@@ -4,8 +4,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, User, Calendar, Search, Trash2 } from 'lucide-react';
+import { Plus, User, Calendar, Search, Trash2, Edit } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { QRScanner } from '@/components/QRScanner';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -15,15 +16,22 @@ interface Patient {
   medical_record_number: string;
   name: string;
   gender: string;
+  patient_group: string;
   created_at: string;
   session_count?: number;
   last_session?: string;
 }
 
+const groupOptions = [
+  '全部', '第一組', '第二組', '第三組', '第四組', '第五組',
+  '第六組', '第七組', '第八組', '第九組', '第十組'
+];
+
 const PatientList = () => {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedGroup, setSelectedGroup] = useState('全部');
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -110,10 +118,12 @@ const PatientList = () => {
     }
   };
 
-  const filteredPatients = patients.filter(patient =>
-    patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    patient.medical_record_number.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredPatients = patients.filter(patient => {
+    const matchesSearch = patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      patient.medical_record_number.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesGroup = selectedGroup === '全部' || patient.patient_group === selectedGroup;
+    return matchesSearch && matchesGroup;
+  });
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('zh-TW');
@@ -164,8 +174,22 @@ const PatientList = () => {
             </div>
             <QRScanner 
               onScanResult={(result) => setSearchTerm(result)}
-              scanType="barcode"
+              scanType="qr"
             />
+          </div>
+          <div className="flex-1">
+            <Select value={selectedGroup} onValueChange={setSelectedGroup}>
+              <SelectTrigger>
+                <SelectValue placeholder="選擇組別" />
+              </SelectTrigger>
+              <SelectContent>
+                {groupOptions.map((group) => (
+                  <SelectItem key={group} value={group}>
+                    {group}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
@@ -183,11 +207,9 @@ const PatientList = () => {
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg flex items-center gap-2">
                       <User className="w-5 h-5 text-medical-600" />
-                      {patient.name}
+                      <Badge variant="outline" className="mr-2">{patient.patient_group}</Badge>
+                      {patient.name} ({patient.gender})
                     </CardTitle>
-                    <Badge variant={patient.gender === '男' ? 'default' : 'secondary'}>
-                      {patient.gender}
-                    </Badge>
                   </div>
                   <p className="text-sm text-medical-600">
                     病歷號: {patient.medical_record_number}
@@ -215,7 +237,18 @@ const PatientList = () => {
                   </div>
                 </CardContent>
               </div>
-              <div className="absolute top-2 right-2">
+              <div className="absolute top-2 right-2 flex gap-1">
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/patient/${patient.id}/edit`);
+                  }}
+                >
+                  <Edit className="w-4 h-4" />
+                </Button>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button 

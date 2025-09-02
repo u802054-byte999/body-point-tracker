@@ -5,8 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
-import { Minus, Plus, RotateCcw, Save, ArrowLeft, User } from 'lucide-react';
-import { BodyDiagram } from './BodyDiagram';
+import { Minus, Plus, RotateCcw, Save, ArrowLeft, User, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface BodyPart {
@@ -310,95 +309,79 @@ const AcupunctureTracker = () => {
             </Card>
           </div>
 
-          <div className="grid lg:grid-cols-2 gap-8">
-            <Card className="bg-white shadow-lg border-medical-200">
-              <CardHeader>
-                <CardTitle className="text-medical-900">身體圖示</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <BodyDiagram
-                  bodyParts={bodyParts}
-                  onIncrement={handleIncrement}
-                  onDecrement={handleDecrement}
-                  onReset={handleReset}
-                />
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white shadow-lg border-medical-200">
-              <CardHeader>
-                <CardTitle className="text-medical-900">控制面板</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {bodyParts.map((part) => (
-                    <div
-                      key={part.id}
-                      className="flex items-center justify-between p-4 bg-medical-50 rounded-lg border border-medical-200"
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="font-medium text-medical-900">{part.name}</span>
-                        <Badge variant="outline" className="text-medical-700">
-                          {part.count}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleDecrement(part.id)}
-                          disabled={part.count === 0}
-                          className="text-medical-600 border-medical-300 hover:bg-medical-100"
-                        >
-                          <Minus className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          onClick={() => handleIncrement(part.id)}
-                          className="bg-medical-600 hover:bg-medical-700"
-                        >
-                          <Plus className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleReset(part.id)}
-                          disabled={part.count === 0}
-                          className="text-medical-600 border-medical-300 hover:bg-medical-100"
-                        >
-                          <RotateCcw className="w-4 h-4" />
-                        </Button>
-                      </div>
+          <Card className="bg-white shadow-lg border-medical-200">
+            <CardHeader>
+              <CardTitle className="text-medical-900">控制面板</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {bodyParts.map((part) => (
+                  <div
+                    key={part.id}
+                    className="flex items-center justify-between p-4 bg-medical-50 rounded-lg border border-medical-200"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="font-medium text-medical-900">{part.name}</span>
+                      <Badge variant="outline" className="text-medical-700">
+                        {part.count}
+                      </Badge>
                     </div>
-                  ))}
-                </div>
-                <div className="flex justify-center gap-4 mt-6">
-                  <Button
-                    onClick={handleResetAll}
-                    variant="outline"
-                    className="text-medical-600 border-medical-300 hover:bg-medical-50"
-                  >
-                    <RotateCcw className="w-4 h-4 mr-2" />
-                    重置全部
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      toast({
-                        title: "提示",
-                        description: "請選擇患者後再儲存針數記錄",
-                        variant: "destructive",
-                      });
-                    }}
-                    disabled={getTotalNeedles() === 0}
-                    className="bg-white-button text-white-button-foreground border border-gray-300 hover:bg-gray-50"
-                  >
-                    <Save className="w-4 h-4 mr-2" />
-                    儲存針數記錄
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleDecrement(part.id)}
+                        disabled={part.count === 0}
+                        className="text-medical-600 border-medical-300 hover:bg-medical-100"
+                      >
+                        <Minus className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => handleIncrement(part.id)}
+                        className="bg-medical-600 hover:bg-medical-700"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleReset(part.id)}
+                        disabled={part.count === 0}
+                        className="text-medical-600 border-medical-300 hover:bg-medical-100"
+                      >
+                        <RotateCcw className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-center gap-4 mt-6">
+                <Button
+                  onClick={handleResetAll}
+                  variant="outline"
+                  className="text-medical-600 border-medical-300 hover:bg-medical-50"
+                >
+                  <RotateCcw className="w-4 h-4 mr-2" />
+                  重置全部
+                </Button>
+                <Button
+                  onClick={() => {
+                    toast({
+                      title: "提示",
+                      description: "請選擇患者後再儲存針數記錄",
+                      variant: "destructive",
+                    });
+                  }}
+                  disabled={getTotalNeedles() === 0}
+                  className="bg-white-button text-white-button-foreground border border-gray-300 hover:bg-gray-50"
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  儲存針數記錄
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
@@ -490,15 +473,51 @@ const AcupunctureTracker = () => {
         <div className="flex justify-center mb-8">
           <Card className="bg-white shadow-lg border-medical-200 w-full max-w-4xl">
             <CardHeader>
-              <CardTitle className="text-medical-900 text-center">身體圖示</CardTitle>
+              <CardTitle className="text-medical-900 text-center">控制面板</CardTitle>
             </CardHeader>
             <CardContent>
-              <BodyDiagram
-                bodyParts={bodyParts}
-                onIncrement={handleIncrement}
-                onDecrement={handleDecrement}
-                onReset={handleReset}
-              />
+              <div className="space-y-4">
+                {bodyParts.map((part) => (
+                  <div
+                    key={part.id}
+                    className="flex items-center justify-between p-4 bg-medical-50 rounded-lg border border-medical-200"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="font-medium text-medical-900">{part.name}</span>
+                      <Badge variant="outline" className="text-medical-700">
+                        {part.count}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleDecrement(part.id)}
+                        disabled={part.count === 0}
+                        className="text-medical-600 border-medical-300 hover:bg-medical-100"
+                      >
+                        <Minus className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => handleIncrement(part.id)}
+                        className="bg-medical-600 hover:bg-medical-700"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleReset(part.id)}
+                        disabled={part.count === 0}
+                        className="text-medical-600 border-medical-300 hover:bg-medical-100"
+                      >
+                        <RotateCcw className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
               <div className="flex justify-center gap-4 mt-6">
                 <Button
                   onClick={handleResetAll}
@@ -564,7 +583,16 @@ const AcupunctureTracker = () => {
                         拔針時間: {formatDateTime(session.needle_removal_time)}
                       </div>
                     )}
-                    <div className="flex justify-end">
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => navigate(`/patient/${patientId}/treatment/edit/${session.id}`)}
+                        className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                      >
+                        <Edit className="w-4 h-4 mr-1" />
+                        修改
+                      </Button>
                       {!session.needle_removal_time ? (
                         <Button
                           size="sm"

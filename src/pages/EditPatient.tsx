@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,21 +15,58 @@ const groupOptions = [
   '第六組', '第七組', '第八組', '第九組', '第十組'
 ];
 
-const AddPatient = () => {
+const EditPatient = () => {
   const [formData, setFormData] = useState({
     medical_record_number: '',
     name: '',
     gender: '',
     patient_group: '第一組'
   });
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const navigate = useNavigate();
+  const { patientId } = useParams();
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (patientId) {
+      fetchPatient();
+    }
+  }, [patientId]);
+
+  const fetchPatient = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('patients')
+        .select('*')
+        .eq('id', patientId)
+        .single();
+
+      if (error) throw error;
+      
+      setFormData({
+        medical_record_number: data.medical_record_number,
+        name: data.name,
+        gender: data.gender,
+        patient_group: data.patient_group || '第一組'
+      });
+    } catch (error) {
+      console.error('Error fetching patient:', error);
+      toast({
+        title: "錯誤",
+        description: "無法載入患者資料",
+        variant: "destructive",
+      });
+      navigate('/patients');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.medical_record_number || !formData.name || !formData.gender || !formData.patient_group) {
+    if (!formData.medical_record_number || !formData.name || !formData.gender) {
       toast({
         title: "錯誤",
         description: "請填寫所有必填欄位",
@@ -38,14 +75,13 @@ const AddPatient = () => {
       return;
     }
 
-    setLoading(true);
+    setSaving(true);
 
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('patients')
-        .insert([formData])
-        .select()
-        .single();
+        .update(formData)
+        .eq('id', patientId);
 
       if (error) {
         if (error.code === '23505') {
@@ -62,19 +98,19 @@ const AddPatient = () => {
 
       toast({
         title: "成功",
-        description: "患者資料已建立",
+        description: "患者資料已更新",
       });
 
-      navigate(`/patient/${data.id}/treatment`);
+      navigate('/patients');
     } catch (error) {
-      console.error('Error creating patient:', error);
+      console.error('Error updating patient:', error);
       toast({
         title: "錯誤",
-        description: "無法建立患者資料",
+        description: "無法更新患者資料",
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
@@ -84,6 +120,17 @@ const AddPatient = () => {
       [field]: value
     }));
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-medical-50 to-medical-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-medical-600 mx-auto mb-4"></div>
+          <p className="text-medical-600">載入中...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-medical-50 to-medical-100">
@@ -99,8 +146,8 @@ const AddPatient = () => {
               返回
             </Button>
             <div>
-              <h1 className="text-3xl font-bold text-medical-900">新增患者</h1>
-              <p className="text-medical-600 mt-1">建立新的患者資料</p>
+              <h1 className="text-3xl font-bold text-medical-900">編輯患者</h1>
+              <p className="text-medical-600 mt-1">修改患者資料</p>
             </div>
           </div>
         </div>
@@ -201,18 +248,18 @@ const AddPatient = () => {
                 </Button>
                 <Button
                   type="submit"
-                  disabled={loading}
+                  disabled={saving}
                   className="flex-1 bg-white-button text-white-button-foreground border border-gray-300 hover:bg-gray-50"
                 >
-                  {loading ? (
+                  {saving ? (
                     <div className="flex items-center gap-2">
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      儲存中...
+                      更新中...
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
                       <Save className="w-4 h-4" />
-                      儲存患者
+                      更新患者
                     </div>
                   )}
                 </Button>
@@ -225,4 +272,4 @@ const AddPatient = () => {
   );
 };
 
-export default AddPatient;
+export default EditPatient;

@@ -74,6 +74,7 @@ export type Database = {
           id: string
           medical_record_number: string
           name: string
+          patient_group: string | null
           updated_at: string
         }
         Insert: {
@@ -82,6 +83,7 @@ export type Database = {
           id?: string
           medical_record_number: string
           name: string
+          patient_group?: string | null
           updated_at?: string
         }
         Update: {
@@ -90,6 +92,7 @@ export type Database = {
           id?: string
           medical_record_number?: string
           name?: string
+          patient_group?: string | null
           updated_at?: string
         }
         Relationships: []
