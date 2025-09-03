@@ -339,7 +339,7 @@ const AcupunctureTracker = () => {
                       <Button
                         size="sm"
                         onClick={() => handleIncrement(part.id)}
-                        className="bg-medical-600 hover:bg-medical-700"
+                        className="bg-primary text-primary-foreground hover:bg-primary/90"
                       >
                         <Plus className="w-4 h-4" />
                       </Button>
@@ -501,7 +501,7 @@ const AcupunctureTracker = () => {
                       <Button
                         size="sm"
                         onClick={() => handleIncrement(part.id)}
-                        className="bg-medical-600 hover:bg-medical-700"
+                        className="bg-primary text-primary-foreground hover:bg-primary/90"
                       >
                         <Plus className="w-4 h-4" />
                       </Button>
