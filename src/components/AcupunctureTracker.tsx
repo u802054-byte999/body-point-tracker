@@ -247,9 +247,9 @@ const AcupunctureTracker = () => {
         description: "針灸記錄已儲存",
       });
 
-      // Reset counts after saving and refresh sessions
+      // Reset counts after saving and navigate back to patient list
       setBodyParts(initialBodyParts);
-      fetchSessions();
+      navigate('/');
     } catch (error) {
       console.error('Error saving session:', error);
       toast({
