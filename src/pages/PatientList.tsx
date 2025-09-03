@@ -20,6 +20,8 @@ interface Patient {
   created_at: string;
   session_count?: number;
   last_session?: string;
+  last_session_id?: string;
+  needle_removal_time?: string;
 }
 
 const groupOptions = [
@@ -32,6 +34,7 @@ const PatientList = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGroup, setSelectedGroup] = useState('全部');
+  const [completingNeedles, setCompletingNeedles] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -54,7 +57,7 @@ const PatientList = () => {
         (patientsData || []).map(async (patient) => {
           const { data: sessions, error: sessionError } = await supabase
             .from('acupuncture_sessions')
-            .select('session_date')
+            .select('id, session_date, needle_removal_time')
             .eq('patient_id', patient.id)
             .order('session_date', { ascending: false });
 
@@ -65,7 +68,9 @@ const PatientList = () => {
           return {
             ...patient,
             session_count: sessions?.length || 0,
-            last_session: sessions?.[0]?.session_date
+            last_session: sessions?.[0]?.session_date,
+            last_session_id: sessions?.[0]?.id,
+            needle_removal_time: sessions?.[0]?.needle_removal_time
           };
         })
       );
@@ -127,6 +132,46 @@ const PatientList = () => {
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('zh-TW');
+  };
+
+  const formatDateTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleString('zh-TW', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const handleCompleteNeedleRemoval = async (sessionId: string, patientName: string) => {
+    setCompletingNeedles(sessionId);
+    try {
+      const { error } = await supabase
+        .from('acupuncture_sessions')
+        .update({ needle_removal_time: new Date().toISOString() })
+        .eq('id', sessionId);
+
+      if (error) throw error;
+
+      toast({
+        title: "成功",
+        description: `已記錄患者 ${patientName} 的拔針時間`,
+      });
+
+      // Refresh patients to show updated data
+      fetchPatients();
+    } catch (error) {
+      console.error('Error updating needle removal time:', error);
+      toast({
+        title: "錯誤",
+        description: "無法記錄拔針時間",
+        variant: "destructive",
+      });
+    } finally {
+      setCompletingNeedles(null);
+    }
   };
 
   if (loading) {
@@ -231,7 +276,35 @@ const PatientList = () => {
                     {patient.last_session && (
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-medical-600">最後治療:</span>
-                        <span>{formatDate(patient.last_session)}</span>
+                        <span>{formatDateTime(patient.last_session)}</span>
+                      </div>
+                    )}
+                    {patient.last_session && patient.needle_removal_time && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-medical-600">拔針時間:</span>
+                        <span>{formatDateTime(patient.needle_removal_time)}</span>
+                      </div>
+                    )}
+                    {patient.last_session && !patient.needle_removal_time && patient.last_session_id && (
+                      <div className="flex justify-end mt-2">
+                        <Button
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCompleteNeedleRemoval(patient.last_session_id!, patient.name);
+                          }}
+                          disabled={completingNeedles === patient.last_session_id}
+                          className="bg-primary text-primary-foreground hover:bg-primary/90"
+                        >
+                          {completingNeedles === patient.last_session_id ? (
+                            <div className="flex items-center gap-2">
+                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                              處理中...
+                            </div>
+                          ) : (
+                            '完成拔針'
+                          )}
+                        </Button>
                       </div>
                     )}
                   </div>
