@@ -26,7 +26,7 @@ const AddPatient = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent, saveAndReturn = true) => {
     e.preventDefault();
     
     if (!formData.medical_record_number || !formData.name || !formData.gender || !formData.patient_group) {
@@ -65,7 +65,18 @@ const AddPatient = () => {
         description: "患者資料已建立",
       });
 
-      navigate(`/patient/${data.id}/treatment`);
+      if (saveAndReturn) {
+        navigate('/patients');
+      } else {
+        // Reset form but keep the group
+        const currentGroup = formData.patient_group;
+        setFormData({
+          medical_record_number: '',
+          name: '',
+          gender: '',
+          patient_group: currentGroup
+        });
+      }
     } catch (error) {
       console.error('Error creating patient:', error);
       toast({
@@ -200,9 +211,28 @@ const AddPatient = () => {
                   取消
                 </Button>
                 <Button
+                  type="button"
+                  disabled={loading}
+                  onClick={(e) => handleSubmit(e, false)}
+                  className="flex-1"
+                  variant="secondary"
+                >
+                  {loading ? (
+                    <div className="flex items-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                      儲存中...
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <Save className="w-4 h-4" />
+                      新增下一位患者
+                    </div>
+                  )}
+                </Button>
+                <Button
                   type="submit"
                   disabled={loading}
-                  className="flex-1 bg-white-button text-white-button-foreground border border-gray-300 hover:bg-gray-50"
+                  className="flex-1"
                 >
                   {loading ? (
                     <div className="flex items-center gap-2">
