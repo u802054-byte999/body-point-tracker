@@ -22,6 +22,15 @@ interface Patient {
   last_session?: string;
   last_session_id?: string;
   needle_removal_time?: string;
+  last_session_needles?: {
+    head_count: number;
+    trunk_count: number;
+    left_arm_count: number;
+    right_arm_count: number;
+    left_leg_count: number;
+    right_leg_count: number;
+    total_needles: number;
+  } | null;
 }
 
 const groupOptions = [
@@ -57,7 +66,7 @@ const PatientList = () => {
         (patientsData || []).map(async (patient) => {
           const { data: sessions, error: sessionError } = await supabase
             .from('acupuncture_sessions')
-            .select('id, session_date, needle_removal_time')
+            .select('id, session_date, needle_removal_time, head_count, trunk_count, left_arm_count, right_arm_count, left_leg_count, right_leg_count, total_needles')
             .eq('patient_id', patient.id)
             .order('session_date', { ascending: false });
 
@@ -70,7 +79,16 @@ const PatientList = () => {
             session_count: sessions?.length || 0,
             last_session: sessions?.[0]?.session_date,
             last_session_id: sessions?.[0]?.id,
-            needle_removal_time: sessions?.[0]?.needle_removal_time
+            needle_removal_time: sessions?.[0]?.needle_removal_time,
+            last_session_needles: sessions?.[0] ? {
+              head_count: sessions[0].head_count,
+              trunk_count: sessions[0].trunk_count,
+              left_arm_count: sessions[0].left_arm_count,
+              right_arm_count: sessions[0].right_arm_count,
+              left_leg_count: sessions[0].left_leg_count,
+              right_leg_count: sessions[0].right_leg_count,
+              total_needles: sessions[0].total_needles
+            } : null
           };
         })
       );
@@ -283,6 +301,34 @@ const PatientList = () => {
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-medical-600">拔針時間:</span>
                         <span>{formatDateTime(patient.needle_removal_time)}</span>
+                      </div>
+                    )}
+                    {patient.last_session && !patient.needle_removal_time && patient.last_session_needles && (
+                      <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                        <div className="text-sm font-medium text-orange-700 mb-2">當前針灸部位及針數</div>
+                        <div className="grid grid-cols-2 gap-2 text-xs text-orange-600">
+                          {patient.last_session_needles.head_count > 0 && (
+                            <div>頭部: {patient.last_session_needles.head_count} 針</div>
+                          )}
+                          {patient.last_session_needles.trunk_count > 0 && (
+                            <div>軀幹: {patient.last_session_needles.trunk_count} 針</div>
+                          )}
+                          {patient.last_session_needles.left_arm_count > 0 && (
+                            <div>左臂: {patient.last_session_needles.left_arm_count} 針</div>
+                          )}
+                          {patient.last_session_needles.right_arm_count > 0 && (
+                            <div>右臂: {patient.last_session_needles.right_arm_count} 針</div>
+                          )}
+                          {patient.last_session_needles.left_leg_count > 0 && (
+                            <div>左腿: {patient.last_session_needles.left_leg_count} 針</div>
+                          )}
+                          {patient.last_session_needles.right_leg_count > 0 && (
+                            <div>右腿: {patient.last_session_needles.right_leg_count} 針</div>
+                          )}
+                        </div>
+                        <div className="text-sm font-medium text-orange-700 mt-2 border-t border-orange-200 pt-2">
+                          總針數: {patient.last_session_needles.total_needles} 針
+                        </div>
                       </div>
                     )}
                     {patient.last_session && !patient.needle_removal_time && patient.last_session_id && (
