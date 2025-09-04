@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       acupuncture_sessions: {
         Row: {
+          acupoints: string | null
           head_count: number
           id: string
           left_arm_count: number
@@ -30,6 +31,7 @@ export type Database = {
           trunk_count: number
         }
         Insert: {
+          acupoints?: string | null
           head_count?: number
           id?: string
           left_arm_count?: number
@@ -44,6 +46,7 @@ export type Database = {
           trunk_count?: number
         }
         Update: {
+          acupoints?: string | null
           head_count?: number
           id?: string
           left_arm_count?: number

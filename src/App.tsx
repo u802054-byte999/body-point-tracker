@@ -8,6 +8,7 @@ import PatientList from "./pages/PatientList";
 import AddPatient from "./pages/AddPatient";
 import EditPatient from "./pages/EditPatient";
 import EditSession from "./pages/EditSession";
+import AcupointSelection from "./pages/AcupointSelection";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
           <Route path="/patient/new" element={<AddPatient />} />
           <Route path="/patient/:patientId/edit" element={<EditPatient />} />
           <Route path="/patient/:patientId/treatment" element={<Index />} />
+          <Route path="/patient/:patientId/treatment/acupoints" element={<AcupointSelection />} />
           <Route path="/patient/:patientId/treatment/edit/:sessionId" element={<EditSession />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

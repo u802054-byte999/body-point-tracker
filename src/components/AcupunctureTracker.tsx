@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
-import { Minus, Plus, RotateCcw, Save, ArrowLeft, User, Edit } from 'lucide-react';
+import { Minus, Plus, RotateCcw, Save, ArrowLeft, User, Edit, Target } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface BodyPart {
@@ -72,6 +72,7 @@ interface Session {
   right_leg_count: number;
   total_needles: number;
   needle_removal_time?: string;
+  acupoints?: string;
 }
 
 const AcupunctureTracker = () => {
@@ -81,8 +82,10 @@ const AcupunctureTracker = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [completingNeedles, setCompletingNeedles] = useState<string | null>(null);
+  const [selectedAcupoints, setSelectedAcupoints] = useState<string>('');
   const { patientId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -93,6 +96,17 @@ const AcupunctureTracker = () => {
       setLoading(false);
     }
   }, [patientId]);
+
+  useEffect(() => {
+    // 檢查是否從穴位選擇頁面返回並帶有穴位參數
+    const urlParams = new URLSearchParams(location.search);
+    const acupoints = urlParams.get('acupoints');
+    if (acupoints) {
+      setSelectedAcupoints(decodeURIComponent(acupoints));
+      // 清除 URL 參數
+      navigate(location.pathname, { replace: true });
+    }
+  }, [location, navigate]);
 
   const fetchPatient = async () => {
     if (!patientId) return;
@@ -234,6 +248,7 @@ const AcupunctureTracker = () => {
         left_leg_count: bodyParts.find(p => p.id === 'left-leg')?.count || 0,
         right_leg_count: bodyParts.find(p => p.id === 'right-leg')?.count || 0,
         total_needles: getTotalNeedles(),
+        acupoints: selectedAcupoints || null,
       };
 
       const { error } = await supabase
@@ -247,8 +262,9 @@ const AcupunctureTracker = () => {
         description: "針灸記錄已儲存",
       });
 
-      // Reset counts after saving and navigate back to patient list
+      // Reset counts and acupoints after saving and navigate back to patient list
       setBodyParts(initialBodyParts);
+      setSelectedAcupoints('');
       navigate('/');
     } catch (error) {
       console.error('Error saving session:', error);
@@ -430,7 +446,7 @@ const AcupunctureTracker = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
                 <Label className="text-sm text-medical-600">病歷號</Label>
                 <p className="font-medium">{patient.medical_record_number}</p>
@@ -444,6 +460,16 @@ const AcupunctureTracker = () => {
                 <Badge variant={patient.gender === '男' ? 'default' : 'secondary'}>
                   {patient.gender}
                 </Badge>
+              </div>
+              <div className="flex justify-end">
+                <Button
+                  variant="outline"
+                  onClick={() => navigate(`/patient/${patientId}/treatment/acupoints`)}
+                  className="flex items-center gap-2 text-medical-600 border-medical-300 hover:bg-medical-100"
+                >
+                  <Target className="w-4 h-4" />
+                  穴位
+                </Button>
               </div>
             </div>
           </CardContent>
@@ -477,6 +503,24 @@ const AcupunctureTracker = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
+                {/* 穴位欄位 */}
+                <div className="p-4 bg-medical-50 rounded-lg border border-medical-200">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3 flex-1">
+                      <span className="font-medium text-medical-900">穴位</span>
+                      <div className="flex-1">
+                        <input
+                          type="text"
+                          value={selectedAcupoints}
+                          onChange={(e) => setSelectedAcupoints(e.target.value)}
+                          placeholder="請輸入或選擇穴位"
+                          className="w-full px-3 py-2 border border-medical-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-medical-500 focus:border-transparent"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
                 {bodyParts.map((part) => (
                   <div
                     key={part.id}
@@ -578,6 +622,11 @@ const AcupunctureTracker = () => {
                       <div>左下肢: {session.left_leg_count}</div>
                       <div>右下肢: {session.right_leg_count}</div>
                     </div>
+                    {session.acupoints && (
+                      <div className="text-sm text-medical-600 mb-3">
+                        穴位: {session.acupoints}
+                      </div>
+                    )}
                     {session.needle_removal_time && (
                       <div className="text-sm text-medical-600 mb-3">
                         拔針時間: {formatDateTime(session.needle_removal_time)}
