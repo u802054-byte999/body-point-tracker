@@ -87,8 +87,9 @@ const AcupointSelection = () => {
 
         <div className="text-center">
           <Button
+            variant="outline"
             onClick={handleComplete}
-            className="bg-medical-600 hover:bg-medical-700 text-white px-8 py-3"
+            className="bg-background text-foreground border-border hover:bg-accent hover:text-accent-foreground px-8 py-3"
           >
             完成
           </Button>
