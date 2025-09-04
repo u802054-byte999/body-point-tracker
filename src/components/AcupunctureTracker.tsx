@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
-import { Minus, Plus, RotateCcw, Save, ArrowLeft, User, Edit, Target } from 'lucide-react';
+import { Minus, Plus, RotateCcw, Save, ArrowLeft, User, Edit, Target, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface BodyPart {
@@ -158,6 +158,47 @@ const AcupunctureTracker = () => {
       day: '2-digit',
       hour: '2-digit',
       minute: '2-digit'
+    });
+  };
+
+  const handleExportSession = (session: Session) => {
+    const exportContent = `針灸治療記錄
+
+患者資訊:
+病歷號: ${patient?.medical_record_number}
+姓名: ${patient?.name}
+性別: ${patient?.gender}
+
+治療時間: ${formatDateTime(session.session_date)}
+${session.needle_removal_time ? `拔針時間: ${formatDateTime(session.needle_removal_time)}` : ''}
+
+針數記錄:
+頭部: ${session.head_count}
+軀幹: ${session.trunk_count}
+左上肢: ${session.left_arm_count}
+右上肢: ${session.right_arm_count}
+左下肢: ${session.left_leg_count}
+右下肢: ${session.right_leg_count}
+總針數: ${session.total_needles}
+
+${session.acupoints ? `穴位: ${session.acupoints}` : ''}
+
+匯出時間: ${new Date().toLocaleString('zh-TW')}
+`;
+
+    const blob = new Blob([exportContent], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `針灸記錄_${patient?.name}_${formatDateTime(session.session_date).replace(/[\/\s:]/g, '_')}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "匯出成功",
+      description: "治療記錄已匯出為txt檔案",
     });
   };
 
@@ -633,6 +674,15 @@ const AcupunctureTracker = () => {
                       </div>
                     )}
                     <div className="flex justify-end gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleExportSession(session)}
+                        className="text-medical-600 border-medical-300 hover:bg-medical-100"
+                      >
+                        <Download className="w-4 h-4 mr-1" />
+                        匯出
+                      </Button>
                       <Button
                         size="sm"
                         variant="outline"
