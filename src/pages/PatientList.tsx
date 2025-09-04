@@ -141,6 +141,23 @@ const PatientList = () => {
     }
   };
 
+  const processQRResult = (result: string) => {
+    // 實現QR掃描結果處理規則
+    // 若字串倒數第八碼為數字"0"，則顯示字串末七碼，否則顯示末八碼
+    if (result.length >= 8) {
+      const eighthFromEnd = result[result.length - 8];
+      if (eighthFromEnd === '0') {
+        // 顯示末七碼
+        return result.slice(-7);
+      } else {
+        // 顯示末八碼
+        return result.slice(-8);
+      }
+    }
+    // 如果字串長度小於8碼，直接返回原字串
+    return result;
+  };
+
   const filteredPatients = patients.filter(patient => {
     const matchesSearch = patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       patient.medical_record_number.toLowerCase().includes(searchTerm.toLowerCase());
@@ -236,7 +253,7 @@ const PatientList = () => {
               />
             </div>
             <QRScanner 
-              onScanResult={(result) => setSearchTerm(result)}
+              onScanResult={(result) => setSearchTerm(processQRResult(result))}
               scanType="qr"
             />
           </div>
