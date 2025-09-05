@@ -76,7 +76,7 @@ const AcupointSelection = () => {
                 <Button
                   key={index}
                   variant="outline"
-                  className={`h-16 text-base font-medium transition-colors ${
+                  className={`aspect-square w-full text-base font-medium transition-colors ${
                     selectedAcupoints.includes(acupoint)
                       ? 'bg-blue-500 text-black border-blue-500 hover:bg-blue-600'
                       : 'bg-white text-black border-gray-300 hover:bg-gray-50'
