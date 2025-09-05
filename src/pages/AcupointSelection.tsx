@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,11 +6,21 @@ import { ArrowLeft } from 'lucide-react';
 
 const AcupointSelection = () => {
   const [selectedAcupoints, setSelectedAcupoints] = useState<string[]>([]);
+  const [acupoints, setAcupoints] = useState<string[]>([]);
   const navigate = useNavigate();
   const { patientId } = useParams();
 
-  // 創建40個穴位格子
-  const acupoints = Array.from({ length: 40 }, (_, i) => (i + 1).toString());
+  // 載入穴位設定
+  useEffect(() => {
+    const savedAcupoints = localStorage.getItem('acupuncture_acupoints');
+    if (savedAcupoints) {
+      const parsed = JSON.parse(savedAcupoints);
+      setAcupoints(parsed.names || Array.from({ length: 40 }, (_, i) => (i + 1).toString()));
+    } else {
+      // 預設40個穴位
+      setAcupoints(Array.from({ length: 40 }, (_, i) => (i + 1).toString()));
+    }
+  }, []);
 
   const toggleAcupoint = (acupoint: string) => {
     setSelectedAcupoints(prev => 
@@ -21,7 +31,15 @@ const AcupointSelection = () => {
   };
 
   const handleComplete = () => {
-    const acupointString = selectedAcupoints.sort((a, b) => parseInt(a) - parseInt(b)).join(', ');
+    const acupointString = selectedAcupoints.sort((a, b) => {
+      // 如果穴位名稱是數字，按數字排序；否則按字母排序
+      const aNum = parseInt(a);
+      const bNum = parseInt(b);
+      if (!isNaN(aNum) && !isNaN(bNum)) {
+        return aNum - bNum;
+      }
+      return a.localeCompare(b);
+    }).join(', ');
     // 使用 URL 參數傳遞選擇的穴位回治療頁面
     navigate(`/patient/${patientId}/treatment?acupoints=${encodeURIComponent(acupointString)}`);
   };
@@ -54,9 +72,9 @@ const AcupointSelection = () => {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-8 gap-3">
-              {acupoints.map((acupoint) => (
+              {acupoints.map((acupoint, index) => (
                 <Button
-                  key={acupoint}
+                  key={index}
                   variant="outline"
                   className={`h-12 text-sm font-medium transition-colors ${
                     selectedAcupoints.includes(acupoint)
@@ -79,7 +97,14 @@ const AcupointSelection = () => {
             </CardHeader>
             <CardContent>
               <p className="text-medical-700">
-                {selectedAcupoints.sort((a, b) => parseInt(a) - parseInt(b)).join(', ')}
+                {selectedAcupoints.sort((a, b) => {
+                  const aNum = parseInt(a);
+                  const bNum = parseInt(b);
+                  if (!isNaN(aNum) && !isNaN(bNum)) {
+                    return aNum - bNum;
+                  }
+                  return a.localeCompare(b);
+                }).join(', ')}
               </p>
             </CardContent>
           </Card>

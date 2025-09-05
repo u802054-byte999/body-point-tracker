@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, User, Calendar, Search, Trash2, Edit } from 'lucide-react';
+import { Plus, User, Calendar, Search, Trash2, Edit, Settings } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
@@ -33,10 +33,17 @@ interface Patient {
   } | null;
 }
 
-const groupOptions = [
-  '全部', '第一組', '第二組', '第三組', '第四組', '第五組',
-  '第六組', '第七組', '第八組', '第九組', '第十組'
-];
+const getGroupOptions = () => {
+  const savedGroups = localStorage.getItem('acupuncture_groups');
+  if (savedGroups) {
+    const groups = JSON.parse(savedGroups);
+    return ['全部', ...groups.map((g: any) => g.name)];
+  }
+  return [
+    '全部', '第一組', '第二組', '第三組', '第四組', '第五組',
+    '第六組', '第七組', '第八組', '第九組', '第十組'
+  ];
+};
 
 const PatientList = () => {
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -44,11 +51,13 @@ const PatientList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGroup, setSelectedGroup] = useState('全部');
   const [completingNeedles, setCompletingNeedles] = useState<string | null>(null);
+  const [groupOptions, setGroupOptions] = useState<string[]>([]);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
     fetchPatients();
+    setGroupOptions(getGroupOptions());
   }, []);
 
   const fetchPatients = async () => {
@@ -176,7 +185,8 @@ const PatientList = () => {
       month: '2-digit',
       day: '2-digit',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
+      hour12: false
     });
   };
 
@@ -229,13 +239,23 @@ const PatientList = () => {
               <h1 className="text-3xl font-bold text-medical-900">患者管理</h1>
               <p className="text-medical-600 mt-1">管理針灸治療患者資料</p>
             </div>
-            <Button
-              onClick={() => navigate('/patient/new')}
-              className="bg-white-button text-white-button-foreground border border-gray-300 hover:bg-gray-50"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              新增患者
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => navigate('/dashboard')}
+                variant="outline"
+                className="border-medical-300 text-medical-600 hover:bg-medical-50"
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                控制台
+              </Button>
+              <Button
+                onClick={() => navigate('/patient/new')}
+                className="bg-white-button text-white-button-foreground border border-gray-300 hover:bg-gray-50"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                新增患者
+              </Button>
+            </div>
           </div>
         </div>
       </header>

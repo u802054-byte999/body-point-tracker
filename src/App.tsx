@@ -9,6 +9,7 @@ import AddPatient from "./pages/AddPatient";
 import EditPatient from "./pages/EditPatient";
 import EditSession from "./pages/EditSession";
 import AcupointSelection from "./pages/AcupointSelection";
+import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +23,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<PatientList />} />
           <Route path="/patients" element={<PatientList />} />
+          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/patient/new" element={<AddPatient />} />
           <Route path="/patient/:patientId/edit" element={<EditPatient />} />
           <Route path="/patient/:patientId/treatment" element={<Index />} />
