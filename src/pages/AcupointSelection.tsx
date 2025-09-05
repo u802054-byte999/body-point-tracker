@@ -71,12 +71,12 @@ const AcupointSelection = () => {
             <CardTitle className="text-center">穴位選擇</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-8 gap-3">
+            <div className="grid grid-cols-6 gap-4">
               {acupoints.map((acupoint, index) => (
                 <Button
                   key={index}
                   variant="outline"
-                  className={`h-12 text-sm font-medium transition-colors ${
+                  className={`h-16 text-base font-medium transition-colors ${
                     selectedAcupoints.includes(acupoint)
                       ? 'bg-blue-500 text-black border-blue-500 hover:bg-blue-600'
                       : 'bg-white text-black border-gray-300 hover:bg-gray-50'

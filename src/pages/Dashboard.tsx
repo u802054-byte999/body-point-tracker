@@ -75,7 +75,7 @@ const Dashboard = () => {
     setEditingGroupName(group.name);
   };
 
-  const handleSaveGroupEdit = () => {
+  const handleSaveGroupEdit = async () => {
     if (!editingGroupName.trim()) {
       toast({
         title: "錯誤",
@@ -85,11 +85,37 @@ const Dashboard = () => {
       return;
     }
 
+    const oldGroupName = groups.find(g => g.id === editingGroup)?.name;
+    const newGroupName = editingGroupName.trim();
+
+    // 更新組別列表
     setGroups(prev => prev.map(group => 
       group.id === editingGroup 
-        ? { ...group, name: editingGroupName.trim() }
+        ? { ...group, name: newGroupName }
         : group
     ));
+
+    // 同步更新患者的組別名稱
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      if (oldGroupName && oldGroupName !== newGroupName) {
+        const { error } = await supabase
+          .from('patients')
+          .update({ patient_group: newGroupName })
+          .eq('patient_group', oldGroupName);
+
+        if (error) {
+          console.error('更新患者組別失敗:', error);
+          toast({
+            title: "警告",
+            description: "組別名稱已更新，但部分患者組別同步失敗",
+            variant: "destructive",
+          });
+        }
+      }
+    } catch (error) {
+      console.error('同步患者組別時發生錯誤:', error);
+    }
     
     setEditingGroup(null);
     setEditingGroupName('');
