@@ -489,7 +489,7 @@ const PatientList = () => {
           ))}
         </div>
 
-        {filteredPatients.length === 0 && (
+        {filteredAndSortedPatients.length === 0 && (
           <div className="text-center py-12">
             <User className="w-16 h-16 text-medical-300 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-medical-900 mb-2">

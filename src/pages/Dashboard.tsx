@@ -31,71 +31,26 @@ const Dashboard = () => {
   }, []);
 
   const loadAcupointSettings = async () => {
+    // 暫時使用本地存儲，直到數據庫類型更新
     try {
-      // 嘗試從數據庫載入穴位設定
-      const { data, error } = await supabase
-        .from('acupoint_settings')
-        .select('*')
-        .single();
-
-      if (data) {
-        const settings = {
-          count: data.count,
-          names: data.names
-        };
+      const stored = localStorage.getItem('acupoint_settings');
+      if (stored) {
+        const settings = JSON.parse(stored);
         setAcupointSettings(settings);
         setEditingAcupointCount(settings.count);
         setEditingAcupointNames([...settings.names]);
       } else {
-        // 如果數據庫中沒有設定，創建默認設定
-        await createDefaultSettings();
+        setEditingAcupointNames([...acupointSettings.names]);
       }
     } catch (error) {
-      // 如果表不存在，創建表和默認設定
-      await createAcupointSettingsTable();
+      console.error('載入穴位設定失敗:', error);
+      setEditingAcupointNames([...acupointSettings.names]);
     } finally {
       setLoading(false);
     }
   };
 
-  const createAcupointSettingsTable = async () => {
-    try {
-      const { error } = await supabase.rpc('create_acupoint_settings_table');
-      if (!error) {
-        await createDefaultSettings();
-      }
-    } catch (error) {
-      console.error('創建穴位設定表失敗:', error);
-      // 回退到默認設定
-      setEditingAcupointNames([...acupointSettings.names]);
-    }
-  };
-
-  const createDefaultSettings = async () => {
-    const defaultSettings = {
-      count: 40,
-      names: Array.from({ length: 40 }, (_, i) => (i + 1).toString())
-    };
-    
-    try {
-      const { error } = await supabase
-        .from('acupoint_settings')
-        .insert({
-          id: 1,
-          count: defaultSettings.count,
-          names: defaultSettings.names
-        });
-        
-      if (!error) {
-        setAcupointSettings(defaultSettings);
-        setEditingAcupointCount(defaultSettings.count);
-        setEditingAcupointNames([...defaultSettings.names]);
-      }
-    } catch (error) {
-      console.error('創建默認穴位設定失敗:', error);
-      setEditingAcupointNames([...acupointSettings.names]);
-    }
-  };
+  // 暫時移除數據庫相關函數，使用本地存儲
 
 
   const handleAcupointCountChange = (newCount: number) => {
@@ -149,21 +104,13 @@ const Dashboard = () => {
     };
     
     try {
-      const { error } = await supabase
-        .from('acupoint_settings')
-        .upsert({
-          id: 1,
-          count: newSettings.count,
-          names: newSettings.names
-        });
-
-      if (error) throw error;
-      
+      // 暫時保存至本地存儲
+      localStorage.setItem('acupoint_settings', JSON.stringify(newSettings));
       setAcupointSettings(newSettings);
       
       toast({
         title: "成功",
-        description: "穴位設定已保存至數據庫",
+        description: "穴位設定已保存至本地存儲",
       });
     } catch (error) {
       console.error('保存穴位設定失敗:', error);
