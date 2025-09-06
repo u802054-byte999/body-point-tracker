@@ -20,7 +20,8 @@ const EditPatient = () => {
     medical_record_number: '',
     name: '',
     gender: '',
-    patient_group: '第一組'
+    patient_group: '第一組',
+    bed_number: ''
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -48,7 +49,8 @@ const EditPatient = () => {
         medical_record_number: data.medical_record_number,
         name: data.name,
         gender: data.gender,
-        patient_group: data.patient_group || '第一組'
+        patient_group: data.patient_group || '第一組',
+        bed_number: data.bed_number || ''
       });
     } catch (error) {
       console.error('Error fetching patient:', error);
@@ -213,6 +215,18 @@ const EditPatient = () => {
                     <SelectItem value="女">女</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="bed_number">
+                  床號
+                </Label>
+                <Input
+                  id="bed_number"
+                  value={formData.bed_number}
+                  onChange={(e) => handleInputChange('bed_number', e.target.value)}
+                  placeholder="請輸入床號"
+                />
               </div>
 
               <div className="space-y-2">

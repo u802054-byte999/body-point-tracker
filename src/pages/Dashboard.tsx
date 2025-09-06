@@ -1,17 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Plus, Edit, Trash2, Save } from 'lucide-react';
+import { ArrowLeft, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-
-interface GroupSetting {
-  id: string;
-  name: string;
-}
 
 interface AcupointSetting {
   count: number;
@@ -19,146 +14,89 @@ interface AcupointSetting {
 }
 
 const Dashboard = () => {
-  const [groups, setGroups] = useState<GroupSetting[]>([
-    { id: '1', name: '第一組' },
-    { id: '2', name: '第二組' },
-    { id: '3', name: '第三組' },
-    { id: '4', name: '第四組' },
-    { id: '5', name: '第五組' },
-    { id: '6', name: '第六組' },
-    { id: '7', name: '第七組' },
-    { id: '8', name: '第八組' },
-    { id: '9', name: '第九組' },
-    { id: '10', name: '第十組' }
-  ]);
-  
   const [acupointSettings, setAcupointSettings] = useState<AcupointSetting>({
     count: 40,
     names: Array.from({ length: 40 }, (_, i) => (i + 1).toString())
   });
   
-  const [editingGroup, setEditingGroup] = useState<string | null>(null);
-  const [editingGroupName, setEditingGroupName] = useState('');
-  const [newGroupName, setNewGroupName] = useState('');
   const [editingAcupointCount, setEditingAcupointCount] = useState<number>(40);
   const [editingAcupointNames, setEditingAcupointNames] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
   
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    // 從 localStorage 載入設定
-    const savedGroups = localStorage.getItem('acupuncture_groups');
-    const savedAcupoints = localStorage.getItem('acupuncture_acupoints');
-    
-    if (savedGroups) {
-      setGroups(JSON.parse(savedGroups));
-    }
-    
-    if (savedAcupoints) {
-      const parsed = JSON.parse(savedAcupoints);
-      setAcupointSettings(parsed);
-      setEditingAcupointCount(parsed.count);
-      setEditingAcupointNames([...parsed.names]);
-    } else {
-      setEditingAcupointNames([...acupointSettings.names]);
-    }
+    loadAcupointSettings();
   }, []);
 
-  const saveToLocalStorage = () => {
-    localStorage.setItem('acupuncture_groups', JSON.stringify(groups));
-    localStorage.setItem('acupuncture_acupoints', JSON.stringify(acupointSettings));
-  };
-
-  const handleEditGroup = (group: GroupSetting) => {
-    setEditingGroup(group.id);
-    setEditingGroupName(group.name);
-  };
-
-  const handleSaveGroupEdit = async () => {
-    if (!editingGroupName.trim()) {
-      toast({
-        title: "錯誤",
-        description: "組別名稱不能為空",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const oldGroupName = groups.find(g => g.id === editingGroup)?.name;
-    const newGroupName = editingGroupName.trim();
-
-    // 更新組別列表
-    setGroups(prev => prev.map(group => 
-      group.id === editingGroup 
-        ? { ...group, name: newGroupName }
-        : group
-    ));
-
-    // 同步更新患者的組別名稱
+  const loadAcupointSettings = async () => {
     try {
-      const { supabase } = await import('@/integrations/supabase/client');
-      if (oldGroupName && oldGroupName !== newGroupName) {
-        const { error } = await supabase
-          .from('patients')
-          .update({ patient_group: newGroupName })
-          .eq('patient_group', oldGroupName);
+      // 嘗試從數據庫載入穴位設定
+      const { data, error } = await supabase
+        .from('acupoint_settings')
+        .select('*')
+        .single();
 
-        if (error) {
-          console.error('更新患者組別失敗:', error);
-          toast({
-            title: "警告",
-            description: "組別名稱已更新，但部分患者組別同步失敗",
-            variant: "destructive",
-          });
-        }
+      if (data) {
+        const settings = {
+          count: data.count,
+          names: data.names
+        };
+        setAcupointSettings(settings);
+        setEditingAcupointCount(settings.count);
+        setEditingAcupointNames([...settings.names]);
+      } else {
+        // 如果數據庫中沒有設定，創建默認設定
+        await createDefaultSettings();
       }
     } catch (error) {
-      console.error('同步患者組別時發生錯誤:', error);
+      // 如果表不存在，創建表和默認設定
+      await createAcupointSettingsTable();
+    } finally {
+      setLoading(false);
     }
-    
-    setEditingGroup(null);
-    setEditingGroupName('');
-    
-    toast({
-      title: "成功",
-      description: "組別名稱已更新",
-    });
   };
 
-  const handleCancelGroupEdit = () => {
-    setEditingGroup(null);
-    setEditingGroupName('');
-  };
-
-  const handleAddGroup = () => {
-    if (!newGroupName.trim()) {
-      toast({
-        title: "錯誤",
-        description: "組別名稱不能為空",
-        variant: "destructive",
-      });
-      return;
+  const createAcupointSettingsTable = async () => {
+    try {
+      const { error } = await supabase.rpc('create_acupoint_settings_table');
+      if (!error) {
+        await createDefaultSettings();
+      }
+    } catch (error) {
+      console.error('創建穴位設定表失敗:', error);
+      // 回退到默認設定
+      setEditingAcupointNames([...acupointSettings.names]);
     }
-
-    const newId = (groups.length + 1).toString();
-    setGroups(prev => [...prev, { id: newId, name: newGroupName.trim() }]);
-    setNewGroupName('');
-    
-    toast({
-      title: "成功",
-      description: "新組別已添加",
-    });
   };
 
-  const handleDeleteGroup = (groupId: string) => {
-    setGroups(prev => prev.filter(group => group.id !== groupId));
+  const createDefaultSettings = async () => {
+    const defaultSettings = {
+      count: 40,
+      names: Array.from({ length: 40 }, (_, i) => (i + 1).toString())
+    };
     
-    toast({
-      title: "成功",
-      description: "組別已刪除",
-    });
+    try {
+      const { error } = await supabase
+        .from('acupoint_settings')
+        .insert({
+          id: 1,
+          count: defaultSettings.count,
+          names: defaultSettings.names
+        });
+        
+      if (!error) {
+        setAcupointSettings(defaultSettings);
+        setEditingAcupointCount(defaultSettings.count);
+        setEditingAcupointNames([...defaultSettings.names]);
+      }
+    } catch (error) {
+      console.error('創建默認穴位設定失敗:', error);
+      setEditingAcupointNames([...acupointSettings.names]);
+    }
   };
+
 
   const handleAcupointCountChange = (newCount: number) => {
     if (newCount < 1 || newCount > 200) {
@@ -193,7 +131,7 @@ const Dashboard = () => {
     setEditingAcupointNames(newNames);
   };
 
-  const handleSaveAcupointSettings = () => {
+  const handleSaveAcupointSettings = async () => {
     // 檢查是否有空的穴位名稱
     const hasEmptyNames = editingAcupointNames.some(name => !name.trim());
     if (hasEmptyNames) {
@@ -210,22 +148,31 @@ const Dashboard = () => {
       names: editingAcupointNames.map(name => name.trim())
     };
     
-    setAcupointSettings(newSettings);
-    
-    toast({
-      title: "成功",
-      description: "穴位設定已保存",
-    });
-  };
+    try {
+      const { error } = await supabase
+        .from('acupoint_settings')
+        .upsert({
+          id: 1,
+          count: newSettings.count,
+          names: newSettings.names
+        });
 
-  const handleSaveAllSettings = () => {
-    handleSaveAcupointSettings();
-    saveToLocalStorage();
-    
-    toast({
-      title: "成功",
-      description: "所有設定已保存",
-    });
+      if (error) throw error;
+      
+      setAcupointSettings(newSettings);
+      
+      toast({
+        title: "成功",
+        description: "穴位設定已保存至數據庫",
+      });
+    } catch (error) {
+      console.error('保存穴位設定失敗:', error);
+      toast({
+        title: "錯誤",
+        description: "無法保存穴位設定",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -248,102 +195,24 @@ const Dashboard = () => {
               </div>
             </div>
             <Button
-              onClick={handleSaveAllSettings}
+              onClick={handleSaveAcupointSettings}
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
               <Save className="w-4 h-4 mr-2" />
-              保存所有設定
+              保存穴位設定
             </Button>
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid gap-8 lg:grid-cols-2">
-          {/* 組別管理 */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-xl text-medical-900">組別管理</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* 新增組別 */}
-              <div className="flex gap-2">
-                <div className="flex-1">
-                  <Label htmlFor="new-group">新增組別</Label>
-                  <Input
-                    id="new-group"
-                    value={newGroupName}
-                    onChange={(e) => setNewGroupName(e.target.value)}
-                    placeholder="輸入組別名稱"
-                    className="mt-1"
-                  />
-                </div>
-                <div className="flex items-end">
-                  <Button onClick={handleAddGroup}>
-                    <Plus className="w-4 h-4 mr-2" />
-                    新增
-                  </Button>
-                </div>
-              </div>
-
-              {/* 現有組別列表 */}
-              <div className="space-y-2">
-                <Label>現有組別</Label>
-                {groups.map((group) => (
-                  <div key={group.id} className="flex items-center gap-2 p-2 border border-medical-200 rounded-lg">
-                    {editingGroup === group.id ? (
-                      <>
-                        <Input
-                          value={editingGroupName}
-                          onChange={(e) => setEditingGroupName(e.target.value)}
-                          className="flex-1"
-                        />
-                        <Button size="sm" onClick={handleSaveGroupEdit}>
-                          <Save className="w-4 h-4" />
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={handleCancelGroupEdit}>
-                          取消
-                        </Button>
-                      </>
-                    ) : (
-                      <>
-                        <span className="flex-1 text-medical-700">{group.name}</span>
-                        <Button size="sm" variant="ghost" onClick={() => handleEditGroup(group)}>
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-700">
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>確認刪除組別</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                您確定要刪除組別「{group.name}」嗎？此操作無法復原。
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>取消</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleDeleteGroup(group.id)}
-                                className="bg-red-500 hover:bg-red-600"
-                              >
-                                確認刪除
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* 穴位設定 */}
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-medical-600"></div>
+          </div>
+        ) : (
+          <div className="grid gap-8">
+            {/* 穴位設定 */}
           <Card>
             <CardHeader>
               <CardTitle className="text-xl text-medical-900">穴位設定</CardTitle>
@@ -392,7 +261,8 @@ const Dashboard = () => {
               </Button>
             </CardContent>
           </Card>
-        </div>
+          </div>
+        )}
       </main>
     </div>
   );

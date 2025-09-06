@@ -20,7 +20,8 @@ const AddPatient = () => {
     medical_record_number: '',
     name: '',
     gender: '',
-    patient_group: '第一組'
+    patient_group: '第一組',
+    bed_number: ''
   });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -74,7 +75,8 @@ const AddPatient = () => {
           medical_record_number: '',
           name: '',
           gender: '',
-          patient_group: currentGroup
+          patient_group: currentGroup,
+          bed_number: ''
         });
       }
     } catch (error) {
@@ -177,6 +179,18 @@ const AddPatient = () => {
                     <SelectItem value="女">女</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="bed_number">
+                  床號
+                </Label>
+                <Input
+                  id="bed_number"
+                  value={formData.bed_number}
+                  onChange={(e) => handleInputChange('bed_number', e.target.value)}
+                  placeholder="請輸入床號"
+                />
               </div>
 
               <div className="space-y-2">

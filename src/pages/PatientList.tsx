@@ -17,6 +17,7 @@ interface Patient {
   name: string;
   gender: string;
   patient_group: string;
+  bed_number?: string;
   created_at: string;
   session_count?: number;
   last_session?: string;
@@ -50,6 +51,7 @@ const PatientList = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGroup, setSelectedGroup] = useState('全部');
+  const [sortBy, setSortBy] = useState('created_at');
   const [completingNeedles, setCompletingNeedles] = useState<string | null>(null);
   const [groupOptions, setGroupOptions] = useState<string[]>([]);
   const navigate = useNavigate();
@@ -167,12 +169,40 @@ const PatientList = () => {
     return result;
   };
 
-  const filteredPatients = patients.filter(patient => {
-    const matchesSearch = patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      patient.medical_record_number.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesGroup = selectedGroup === '全部' || patient.patient_group === selectedGroup;
-    return matchesSearch && matchesGroup;
-  });
+  const filteredAndSortedPatients = patients
+    .filter(patient => {
+      const matchesSearch = patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        patient.medical_record_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (patient.bed_number && patient.bed_number.toLowerCase().includes(searchTerm.toLowerCase()));
+      const matchesGroup = selectedGroup === '全部' || patient.patient_group === selectedGroup;
+      return matchesSearch && matchesGroup;
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case 'bed_number':
+          const bedA = a.bed_number || '';
+          const bedB = b.bed_number || '';
+          return bedA.localeCompare(bedB);
+        case 'last_session':
+          const dateA = a.last_session ? new Date(a.last_session).getTime() : 0;
+          const dateB = b.last_session ? new Date(b.last_session).getTime() : 0;
+          return dateB - dateA; // 最新的在前
+        case 'needle_removal':
+          // 未完成拔針的排在前面
+          const needleRemovedA = a.needle_removal_time ? 1 : 0;
+          const needleRemovedB = b.needle_removal_time ? 1 : 0;
+          if (needleRemovedA !== needleRemovedB) {
+            return needleRemovedA - needleRemovedB;
+          }
+          // 如果都已拔針或都未拔針，按拔針時間排序
+          if (a.needle_removal_time && b.needle_removal_time) {
+            return new Date(b.needle_removal_time).getTime() - new Date(a.needle_removal_time).getTime();
+          }
+          return 0;
+        default:
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+    });
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('zh-TW');
@@ -261,12 +291,12 @@ const PatientList = () => {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6">
+        <div className="mb-6 space-y-4">
           <div className="flex gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-medical-400 w-4 h-4" />
               <Input
-                placeholder="搜尋患者姓名或病歷號..."
+                placeholder="搜尋患者姓名、病歷號或床號..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -277,24 +307,39 @@ const PatientList = () => {
               scanType="qr"
             />
           </div>
-          <div className="flex-1">
-            <Select value={selectedGroup} onValueChange={setSelectedGroup}>
-              <SelectTrigger>
-                <SelectValue placeholder="選擇組別" />
-              </SelectTrigger>
-              <SelectContent>
-                {groupOptions.map((group) => (
-                  <SelectItem key={group} value={group}>
-                    {group}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <Select value={selectedGroup} onValueChange={setSelectedGroup}>
+                <SelectTrigger>
+                  <SelectValue placeholder="選擇組別" />
+                </SelectTrigger>
+                <SelectContent>
+                  {groupOptions.map((group) => (
+                    <SelectItem key={group} value={group}>
+                      {group}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex-1">
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger>
+                  <SelectValue placeholder="排序方式" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="created_at">加入時間</SelectItem>
+                  <SelectItem value="bed_number">床號</SelectItem>
+                  <SelectItem value="last_session">最後治療時間</SelectItem>
+                  <SelectItem value="needle_removal">拔針狀態</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {filteredPatients.map((patient) => (
+          {filteredAndSortedPatients.map((patient) => (
             <Card 
               key={patient.id} 
               className="hover:shadow-lg transition-shadow border-medical-200 relative"
@@ -314,6 +359,11 @@ const PatientList = () => {
                   <p className="text-sm text-medical-600">
                     病歷號: {patient.medical_record_number}
                   </p>
+                  {patient.bed_number && (
+                    <p className="text-sm text-medical-600">
+                      床號: {patient.bed_number}
+                    </p>
+                  )}
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
