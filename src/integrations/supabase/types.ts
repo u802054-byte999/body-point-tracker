@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      acupoint_settings: {
+        Row: {
+          count: number
+          created_at: string
+          id: number
+          names: string[]
+          updated_at: string
+        }
+        Insert: {
+          count?: number
+          created_at?: string
+          id?: number
+          names?: string[]
+          updated_at?: string
+        }
+        Update: {
+          count?: number
+          created_at?: string
+          id?: number
+          names?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       acupuncture_sessions: {
         Row: {
           acupoints: string | null
@@ -108,7 +132,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      ensure_acupoint_settings: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
